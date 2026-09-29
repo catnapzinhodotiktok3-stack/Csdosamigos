@@ -2,7 +2,7 @@ const bedrock = require('bedrock-protocol');
 function createBot() {
   console.log('Tentando conectar...');
   const client = bedrock.createClient({
-    host: 'CsDosAmigos-K6LW.aternos.me',
+    host: 'CsDosAmigos-k6LW.aternos.me',
     port: 62990,
     username: 'Bott',
     offline: true
