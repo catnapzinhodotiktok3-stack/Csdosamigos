@@ -1,0 +1,7 @@
+{
+  "name": "afk-bedrock",
+  "main": "index.js",
+  "dependencies": {
+    "bedrock-protocol": "^4.14.0"
+  }
+}
