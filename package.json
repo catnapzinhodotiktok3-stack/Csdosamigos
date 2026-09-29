@@ -1,8 +1,8 @@
 {
-  "name": "csdosamigos-bot",
+  "name": "bot-aternos",
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {
-    "bedrock-protocol": "^3.56.1"
+    "bedrock-protocol": "4.14.0"
   }
 }
