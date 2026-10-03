@@ -4,87 +4,87 @@ const express = require('express')
 const HOST = 'CsDosAmigos-k6LW.aternos.me'
 const PORT = 62990
 
-// --- SITE FAKE PRO RENDER NÃO DERRUBAR ---
 const app = express()
-app.get('/', (req, res) => {
-  res.send('Bot CsDosAmigos Bedrock pulando 24h! 💜')
-})
+app.get('/', (req, res) => res.send('Bot CsDosAmigos pulando 24h! 💜'))
 const RENDER_PORT = process.env.PORT || 10000
-app.listen(RENDER_PORT, () => {
-  console.log(`[b712d] Site na porta ${RENDER_PORT}`)
-})
+app.listen(RENDER_PORT, () => console.log(`Site na porta ${RENDER_PORT}`))
 
 function entra() {
-  console.log(`Entrando no Bedrock ${HOST}:${PORT}`)
+  console.log(`Entrando no ${HOST}:${PORT}`)
   const bot = createClient({
     host: HOST,
     port: PORT,
     username: 'CsBot_' + Math.floor(Math.random() * 89 + 10),
-    offline: true, // Bedrock pirata / Aternos
-    version: '1.21.93' // compatível com seu servidor 1.26.51
+    offline: true,
+    version: '1.21.93'
   })
 
   let pulaInterval = null
-
-  bot.on('connect', () => {
-    console.log(`Connecting to ${HOST}:${PORT}`)
-  })
+  let chatInterval = null
 
   bot.on('spawn', () => {
-    console.log(`✅ ENTREI! Bem-vindo ao servidor! Pulando...`)
+    console.log('✅ ENTREI!')
 
-    // PULA a cada 3.5s pra não tomar kick AFK
+    // PULO QUE VOCÊ MANDOU - ESSE FUNCIONA
     pulaInterval = setInterval(() => {
       try {
+        const pos = bot.entity.position
+        // sobe 0.5 bloco
         bot.write('move_player', {
           runtime_id: bot.entity.runtimeId,
-          position: bot.entity.position,
-          pitch: 0,
-          yaw: 0,
-          head_yaw: 0,
-          mode: 0,
-          on_ground: false, // pulando
-          ridden_runtime_id: 0,
-          teleport: false
+          position: { x: pos.x, y: pos.y + 0.5, z: pos.z },
+          pitch: 0, yaw: pos.yaw || 0, head_yaw: 0, mode: 0,
+          on_ground: false, ridden_runtime_id: 0, teleport: false
         })
-        // volta pro chão depois de 200ms
+        // desce depois de 300ms
         setTimeout(() => {
           try {
             bot.write('move_player', {
               runtime_id: bot.entity.runtimeId,
-              position: bot.entity.position,
-              pitch: 0, yaw: 0, head_yaw: 0, mode: 0,
-              on_ground: true,
-              ridden_runtime_id: 0,
-              teleport: false
+              position: pos,
+              pitch: 0, yaw: pos.yaw || 0, head_yaw: 0, mode: 0,
+              on_ground: true, ridden_runtime_id: 0, teleport: false
             })
           } catch {}
-        }, 200)
-      } catch (e) {}
+        }, 300)
+        console.log('PULOU!')
+      } catch {}
     }, 3500)
 
-    // Fica 10 minutos online e sai pra não tomar ban do Aternos
+    // FALA @a e todos
+    chatInterval = setInterval(() => {
+      try {
+        bot.queue('text', {
+          type: 'chat',
+          needs_translation: false,
+          source_name: bot.username,
+          xuid: '',
+          platform_chat_id: '',
+          message: '@a e todos bot ativo pulando!'
+        })
+      } catch {}
+    }, 60000)
+
+    // Sai em 10 min pra não tomar ban
     setTimeout(() => {
-      console.log('Saindo pra evitar ban...')
+      console.log('Saindo...')
       clearInterval(pulaInterval)
+      clearInterval(chatInterval)
       bot.close()
     }, 10 * 60 * 1000)
   })
 
-  bot.on('text', (packet) => {
-    // mostra chat do servidor no log se quiser
-    // console.log('CHAT:', packet.message)
-  })
-
   bot.on('close', () => {
     if (pulaInterval) clearInterval(pulaInterval)
-    console.log('Desconectou. Voltando em 50s...')
-    setTimeout(entra, 50000) // 50s offline = anti-ban
+    if (chatInterval) clearInterval(chatInterval)
+    console.log('Desconectou, voltando em 50s...')
+    setTimeout(entra, 50000)
   })
 
-  bot.on('error', (err) => {
-    console.log('Erro:', err.message)
+  bot.on('error', (e) => {
+    console.log('Erro:', e.message)
     if (pulaInterval) clearInterval(pulaInterval)
+    if (chatInterval) clearInterval(chatInterval)
     setTimeout(entra, 60000)
   })
 }
