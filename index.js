@@ -1,49 +1,71 @@
-const bedrock = require('bedrock-protocol')
-require('http').createServer((req,res)=>res.end('Bot ON')).listen(process.env.PORT || 3000)
+const { createClient } = require('bedrock-protocol')
+const express = require('express')
 
+// --- Config do seu Aternos ---
 const HOST = 'CsDosAmigos-k6LW.aternos.me'
 const PORT = 62990
-const NICK = 'davimiguel'
+const USERNAME = 'CsBot'
 
-function criarBot(){
-  console.log('Conectando BEDROCK em '+HOST+':'+PORT)
-  const client = bedrock.createClient({
+// --- Site fake pro Render não dormir ---
+const app = express()
+app.get('/', (req, res) => res.send('CsDosAmigos Bot online 💜 pulando!'))
+app.listen(10000, () => console.log('Web server ligado'))
+
+function entra() {
+  console.log(`Tentando entrar em ${HOST}:${PORT}...`)
+  const bot = createClient({
     host: HOST,
     port: PORT,
-    username: NICK,
-    offline: true
+    username: USERNAME + Math.floor(Math.random() * 100), // nome aleatório pra não tomar ban
+    offline: true,
+    version: '1.21.51' // compatível com seu 1.26
   })
 
-  client.on('spawn', ()=>{
-    console.log('BOT ENTROU E VAI PULAR! ✅')
+  bot.on('spawn', () => {
+    console.log('✅ ENTREI! Começando a pular...')
     
-    // Anti-AFK pulando a cada 15s
-    setInterval(()=>{
-      try{
-        client.write('text', { type: 'chat', needs_translation: false, source_name: '', xuid: '', platform_chat_id: '', message: '' })
-        // pulo
-        client.queue('player_auth_input', {
+    // PULA a cada 3 a 5 segundos (anti-AFK)
+    const pula = setInterval(() => {
+      try {
+        bot.write('move_player', {
+          runtime_id: bot.entity.runtimeId || 1,
+          position: bot.entity.position,
           pitch: 0,
           yaw: 0,
-          position: client.entity?.position || {x:0,y:0,z:0},
-          move_vector: {x:0, z:0},
           head_yaw: 0,
-          input_data: { _value: 0x80 }, // jump
-          input_mode: 'mouse',
-          play_mode: 'screen',
-          tick: 0n,
-          delta: {x:0,y:0,z:0}
+          mode: 0,
+          on_ground: false, // pulando
+          ridden_runtime_id: 0,
+          teleport: false
         })
-        console.log('Pulou!')
-      }catch(e){}
-    }, 15000)
+        // volta pro chão
+        setTimeout(() => {
+           bot.write('move_player', {
+            runtime_id: bot.entity.runtimeId || 1,
+            position: bot.entity.position,
+            pitch: 0, yaw: 0, head_yaw: 0, mode: 0,
+            on_ground: true,
+            ridden_runtime_id: 0, teleport: false
+          })
+        }, 200)
+      } catch(e){}
+    }, 3000 + Math.random() * 2000)
+
+    // Fica online 8 a 12 min e sai (anti-ban Aternos)
+    const tempoOnline = (8 + Math.random() * 4) * 60 * 1000
+    setTimeout(() => {
+      clearInterval(pula)
+      console.log('Saindo pra não tomar ban...')
+      bot.close()
+    }, tempoOnline)
   })
 
-  client.on('close', ()=>{
-    console.log('Caiu, reconectando 10s...')
-    setTimeout(criarBot, 10000)
+  bot.on('close', () => {
+    const espera = 40000 + Math.random() * 30000 // 40s a 70s offline
+    console.log(`Saiu. Voltando em ${Math.round(espera/1000)}s...`)
+    setTimeout(entra, espera)
   })
 
-  client.on('error', (e)=>console.log('Erro:', e.message))
-}
-criarBot()
+  bot.on('error', (e) => {
+    console.log('Erro:', e.message)
+    setTimeout(entra, 450
